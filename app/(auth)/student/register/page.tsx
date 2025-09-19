@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useData } from '@/context/DataContext';
 // import { User, UserRole } from '@/types';
 import { UserCircle, Mail, Lock, BookOpen } from 'lucide-react';
+import { useDataContext } from '@/context/DataContext';
 
 export default function StudentRegister() {
   const [formData, setFormData] = useState({
@@ -18,7 +18,7 @@ export default function StudentRegister() {
   });
   const [error, setError] = useState('');
   const router = useRouter();
-  const { registerStudent } = useData();
+  const { registerStudent } = useDataContext ();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,7 +28,7 @@ export default function StudentRegister() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -37,14 +37,21 @@ export default function StudentRegister() {
       return;
     }
 
-    const { ...studentData } = formData;
-    // Remove confirmPassword as it's only used for validation
-    const user = registerStudent(studentData);
-
-    if (user) {
+    try {
+      await registerStudent({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        matricNumber: formData.matricNumber,
+        department: formData.department,
+      });
+      
+      // If we get here, registration was successful
       router.push('/student/dashboard');
-    } else {
-      setError('Registration failed. Email might already be in use.');
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || 'An error occurred during registration');
+      console.error('Registration error:', error);
     }
   };
 

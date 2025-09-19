@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useData } from '@/context/DataContext';
+import { useDataContext } from '@/context/DataContext';
 import { Project, Allocation, Supervisor } from '@/types';
 import { BookOpen, User, Calendar, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProjectDetails() {
-  const { currentUser, getStudentAllocation, getProjectById, getUserById } = useData();
+  const { currentUser, getStudentAllocation, getProjectById, getUserById } = useDataContext();
   const [allocation, setAllocation] = useState<Allocation | null>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [supervisor, setSupervisor] = useState<Supervisor | null>(null);

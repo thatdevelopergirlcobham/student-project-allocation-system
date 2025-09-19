@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useData } from '@/context/DataContext';
+import { useDataContext } from '@/context/DataContext';
 import { User } from '@/types';
 import {  Search, User as UserIcon, UserPlus } from 'lucide-react';
 
 export default function AdminUsersPage() {
-  const { getUsers, getStudents, getSupervisors, deleteUser } = useData();
+  const { getUsers, getStudents, getSupervisors, deleteUser } = useDataContext();
   const [users, setUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'students' | 'supervisors'>('all');

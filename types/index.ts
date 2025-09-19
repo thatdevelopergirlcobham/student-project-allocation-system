@@ -41,6 +41,7 @@ export interface Allocation {
   id: string;
   studentId: string;
   projectId: string;
+  supervisorId: string;
   createdAt: string;
 }
 

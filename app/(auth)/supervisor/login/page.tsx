@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 // import Link from 'next/link';
-import { useData } from '@/context/DataContext';
+import { useDataContext } from '@/context/DataContext';
 import { Lock, Mail } from 'lucide-react';
 
 export default function SupervisorLogin() {
@@ -11,16 +11,20 @@ export default function SupervisorLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const { login } = useData();
+  const { login } = useDataContext();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    const user = login(email, password);
-    if (user && user.role === 'SUPERVISOR') {
-      router.push('/supervisor/dashboard');
-    } else {
+    try {
+      await login(email, password);
+      // If login is successful, the user will be set in the context
+      // We'll use a small timeout to ensure the context is updated
+      setTimeout(() => {
+        router.push('/supervisor/dashboard');
+      }, 100);
+    } catch (err) {
       setError('Invalid supervisor credentials');
     }
   };

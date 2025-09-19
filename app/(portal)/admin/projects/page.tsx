@@ -2,15 +2,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useData } from '@/context/DataContext';
-import { Project } from '@/types';
+import { useDataContext } from '@/context/DataContext';
+import { Project, User } from '@/types';
 import { Plus, Search, BookOpen } from 'lucide-react';
 
 export default function AdminProjectsPage() {
-  const { getProjects, getSupervisors, deleteProject } = useData();
+  const { getProjects, getSupervisors } = useDataContext();
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [supervisors] = useState(getSupervisors());
+  const [supervisors, setSupervisors] = useState<User[]>([]);
+  
+  useEffect(() => {
+    setSupervisors(getSupervisors());
+  }, [getSupervisors]);
 
   useEffect(() => {
     loadProjects();
@@ -20,22 +24,31 @@ export default function AdminProjectsPage() {
     setProjects(getProjects());
   };
 
-  const filteredProjects = projects.filter(project => 
-    project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProjects = projects.filter(project => {
+    const searchLower = searchTerm.toLowerCase();
+    const projectTitle = project.title?.toLowerCase() || '';
+    const projectDesc = project.description?.toLowerCase() || '';
+    const supervisor = supervisors.find(s => s.id === project.supervisorId);
+    const supervisorName = supervisor?.name?.toLowerCase() || '';
+    
+    return (
+      projectTitle.includes(searchLower) ||
+      projectDesc.includes(searchLower) ||
+      supervisorName.includes(searchLower)
+    );
+  });
 
   const getSupervisorName = (supervisorId: string) => {
     const supervisor = supervisors.find(s => s.id === supervisorId);
     return supervisor ? supervisor.name : 'Unassigned';
   };
 
-  const handleDelete = (projectId: string) => {
-    if (confirm('Are you sure you want to delete this project?')) {
-      deleteProject(projectId);
-      loadProjects();
-    }
-  };
+  // const handleDelete = (projectId: string) => {
+  //   if (confirm('Are you sure you want to delete this project?')) {
+  //     deleteProject(projectId);
+  //     loadProjects();
+  //   }
+  // };
 
   return (
     <div className="py-6">
@@ -114,7 +127,7 @@ export default function AdminProjectsPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(project.id)}
+                          // onClick={() => handleDelete(project.id)}
                           className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                         >
                           Delete
