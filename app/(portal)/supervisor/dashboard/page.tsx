@@ -1,0 +1,281 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useData } from '@/context/DataContext';
+import { Project, ProgressReport, Allocation, User } from '@/types';
+import { 
+  BookOpen, 
+  Users, 
+  Clock, 
+  CheckCircle, 
+  XCircle,
+  AlertCircle,
+  BarChart2
+} from 'lucide-react';
+
+export default function SupervisorDashboard() {
+  const { 
+    currentUser, 
+    getSupervisorProjects, 
+    getSupervisorAllocations,
+    getSupervisorReports,
+    getStudents
+  } = useData();
+
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [reports, setReports] = useState<ProgressReport[]>([]);
+  const [students, setStudents] = useState<Record<string, User>>({});
+  const [stats, setStats] = useState({
+    totalProjects: 0,
+    totalStudents: 0,
+    pendingReports: 0,
+    approvedReports: 0,
+    rejectedReports: 0,
+  });
+
+  useEffect(() => {
+    if (currentUser?.role === 'SUPERVISOR') {
+      loadDashboardData();
+    }
+  }, [currentUser]);
+
+  const loadDashboardData = () => {
+    try {
+      // Get supervisor's projects, allocations, and reports
+      const supervisorProjects = getSupervisorProjects(currentUser?.id || '');
+      const supervisorAllocations = getSupervisorAllocations(currentUser?.id || '');
+      const supervisorReports = getSupervisorReports(currentUser?.id || '');
+      
+      // Get student details for allocations
+      const studentIds = [...new Set(supervisorAllocations.map(a => a.studentId))];
+      const studentRecords = getStudents(studentIds);
+      
+      // Calculate statistics
+      const pendingReports = supervisorReports.filter(r => r.status === 'PENDING').length;
+      const approvedReports = supervisorReports.filter(r => r.status === 'APPROVED').length;
+      const rejectedReports = supervisorReports.filter(r => r.status === 'REJECTED').length;
+
+      setProjects(supervisorProjects);
+      setAllocations(supervisorAllocations);
+      setReports(supervisorReports);
+      setStudents(studentRecords);
+      
+      setStats({
+        totalProjects: supervisorProjects.length,
+        totalStudents: new Set(supervisorAllocations.map(a => a.studentId)).size,
+        pendingReports,
+        approvedReports,
+        rejectedReports,
+      });
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading supervisor dashboard data:', error);
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-6">
+      <div className="px-4 sm:px-6 md:px-0">
+        <h1 className="text-2xl font-semibold text-gray-900">Supervisor Dashboard</h1>
+        <p className="mt-1 text-sm text-gray-500">Welcome back, {currentUser?.name || 'Supervisor'}</p>
+      </div>
+      
+      {/* Stats Grid */}
+      <div className="mt-8">
+        <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Overview</h2>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Projects Card */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                  <BookOpen className="h-6 w-6 text-white" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Total Projects</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">
+                        {stats.totalProjects}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Students Card */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Supervising Students</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">
+                        {stats.totalStudents}
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Reports Card */}
+          <div className="bg-white overflow-hidden shadow rounded-lg">
+            <div className="p-5">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
+                  <BarChart2 className="h-6 w-6 text-white" />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt className="text-sm font-medium text-gray-500 truncate">Reports to Review</dt>
+                    <dd className="flex items-baseline">
+                      <div className="text-2xl font-semibold text-gray-900">
+                        {stats.pendingReports}
+                      </div>
+                      <div className="ml-2 flex items-baseline text-xs font-semibold">
+                        <span className="text-green-500">{stats.approvedReports} approved</span>
+                        <span className="text-red-500 ml-2">{stats.rejectedReports} rejected</span>
+                      </div>
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity and Projects */}
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        {/* Recent Reports */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Reports</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">Latest progress reports from your students</p>
+          </div>
+          <div className="bg-white shadow overflow-hidden sm:rounded-b-lg">
+            <ul className="divide-y divide-gray-200">
+              {reports.length > 0 ? (
+                reports.slice(0, 5).map((report) => {
+                  const student = students[report.studentId];
+                  return (
+                    <li key={report.id} className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
+                          report.status === 'PENDING' ? 'bg-yellow-100' : 
+                          report.status === 'APPROVED' ? 'bg-green-100' : 'bg-red-100'
+                        }`}>
+                          {report.status === 'PENDING' ? (
+                            <Clock className="h-5 w-5 text-yellow-600" />
+                          ) : report.status === 'APPROVED' ? (
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <XCircle className="h-5 w-5 text-red-600" />
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {student?.name || `Student ${report.studentId}`}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {report.title} - {new Date(report.submissionDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="ml-auto">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            report.status === 'PENDING' 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : report.status === 'APPROVED' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                          }`}>
+                            {report.status}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })
+              ) : (
+                <li className="px-6 py-4 text-center text-gray-500">
+                  No reports found
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+
+        {/* My Projects */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">My Projects</h3>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">Projects you are supervising</p>
+          </div>
+          <div className="bg-white shadow overflow-hidden sm:rounded-b-lg">
+            <ul className="divide-y divide-gray-200">
+              {projects.length > 0 ? (
+                projects.slice(0, 5).map((project) => {
+                  const projectAllocations = allocations.filter(a => a.projectId === project.id);
+                  const allocatedCount = projectAllocations.length;
+                  
+                  return (
+                    <li key={project.id} className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <BookOpen className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <div className="text-sm font-medium text-gray-900">
+                            {project.title}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {allocatedCount} {allocatedCount === 1 ? 'student' : 'students'} allocated
+                          </div>
+                        </div>
+                        <div>
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            project.status === 'AVAILABLE' 
+                              ? 'bg-green-100 text-green-800' 
+                              : project.status === 'ALLOCATED' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {project.status}
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })
+              ) : (
+                <li className="px-6 py-4 text-center text-gray-500">
+                  No projects found
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
