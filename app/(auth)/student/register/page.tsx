@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useData } from '@/context/DataContext';
-import { User, UserRole } from '@/types';
+// import { User, UserRole } from '@/types';
 import { UserCircle, Mail, Lock, BookOpen } from 'lucide-react';
 
 export default function StudentRegister() {
@@ -37,11 +37,9 @@ export default function StudentRegister() {
       return;
     }
 
-    const { confirmPassword, ...studentData } = formData;
-    const user = registerStudent({
-      ...studentData,
-      role: 'STUDENT' as UserRole
-    });
+    const { ...studentData } = formData;
+    // Remove confirmPassword as it's only used for validation
+    const user = registerStudent(studentData);
 
     if (user) {
       router.push('/student/dashboard');
