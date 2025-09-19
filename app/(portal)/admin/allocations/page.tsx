@@ -6,21 +6,24 @@ import { Allocation, Project, User } from '@/types';
 import { RefreshCw, Search, User as UserIcon, BookOpen } from 'lucide-react';
 
 export default function AdminAllocationsPage() {
-  const { getAllocations, getProjects, getStudents, runAllocation } = useData();
+  const { getAllocations, getProjects, getStudents, getSupervisors, runAllocation } = useData();
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [students, setStudents] = useState<User[]>([]);
+  const [supervisors, setSupervisors] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = () => {
     setAllocations(getAllocations());
     setProjects(getProjects());
     setStudents(getStudents());
+    setSupervisors(getSupervisors());
   };
 
   const filteredAllocations = allocations.filter(allocation => {
@@ -50,7 +53,7 @@ export default function AdminAllocationsPage() {
     const project = projects.find(p => p.id === projectId);
     if (!project) return 'Unknown';
     
-    const supervisor = getSupervisors().find(s => s.id === project.supervisorId);
+    const supervisor = supervisors.find(s => s.id === project.supervisorId);
     return supervisor ? supervisor.name : 'Unassigned';
   };
 
@@ -157,7 +160,7 @@ export default function AdminAllocationsPage() {
   );
 
   // Helper function to get supervisors (moved here to fix the error)
-  function getSupervisors() {
-    return []; // This should be replaced with actual implementation
-  }
+  // function getSupervisors() {
+  //   return []; // This should be replaced with actual implementation
+  // }
 }
